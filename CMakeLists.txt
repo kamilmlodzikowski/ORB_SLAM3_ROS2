@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(orbslam3)
 
 # You should set the PYTHONPATH to your own python site-packages path
-set(ENV{PYTHONPATH} "/opt/ros/humble/lib/python3.10/site-packages")
+# set(ENV{PYTHONPATH} "/opt/ros/humble/lib/python3.10/site-packages")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules)
 
@@ -64,6 +64,11 @@ install(TARGETS mono rgbd stereo stereo-inertial DESTINATION lib/${PROJECT_NAME}
 # Install launch files.
 #install(DIRECTORY launch config vocabulary
 #  DESTINATION share/${PROJECT_NAME}/)
+
+target_link_libraries(mono ${OpenCV_LIBS})
+target_link_libraries(rgbd ${OpenCV_LIBS})
+target_link_libraries(stereo ${OpenCV_LIBS})
+target_link_libraries(stereo-inertial ${OpenCV_LIBS})
 
 ament_package()
 
