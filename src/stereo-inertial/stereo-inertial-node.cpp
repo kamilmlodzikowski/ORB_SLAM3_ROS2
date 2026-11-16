@@ -135,8 +135,12 @@ void StereoInertialNode::SyncWithImu()
 {
     const double maxTimeDiff = 0.01;
 
-    while (1)
+    // stop with rclcpp (Ctrl+C), the destructor joins this thread
+    while (rclcpp::ok())
     {
+        // also when waiting for data, so the loop does not take a whole CPU core
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
         cv::Mat imLeft, imRight;
         double tImLeft = 0, tImRight = 0;
         if (!imgLeftBuf_.empty() && !imgRightBuf_.empty() && !imuBuf_.empty())
@@ -160,11 +164,9 @@ void StereoInertialNode::SyncWithImu()
             }
             bufMutexLeft_.unlock();
 
+            // the matching image from the other camera has not arrived yet
             if ((tImLeft - tImRight) > maxTimeDiff || (tImRight - tImLeft) > maxTimeDiff)
-            {
-                std::cout << "big time difference" << std::endl;
                 continue;
-            }
             if (tImLeft > Utility::StampToSec(imuBuf_.back()->header.stamp))
                 continue;
 
@@ -208,9 +210,6 @@ void StereoInertialNode::SyncWithImu()
             }
 
             SLAM_->TrackStereo(imLeft, imRight, tImLeft, vImuMeas);
-
-            std::chrono::milliseconds tSleep(1);
-            std::this_thread::sleep_for(tSleep);
         }
     }
 }
