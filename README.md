@@ -11,6 +11,9 @@ This repository is ROS2 wrapping to use ORB_SLAM3
   - Ubuntu 22.04
   - ROS2 Humble
   - OpenCV 4.5.4
+- The `lyrical` branch of this fork builds on Ubuntu 26.04 with ROS 2 Lyrical (OpenCV 4.10, GCC 15, CMake 4).
+  It is used in the [LabARM Lab07-ORB-SLAM image](https://github.com/kamilmlodzikowski/LabARM/tree/main/Lab07-ORB-SLAM),
+  where ORB_SLAM3 is built in `/ORB_SLAM3` (see its Dockerfile for the needed ORB_SLAM3 build fixes).
 
 - Build ORB_SLAM3
   - Go to this [repo](https://github.com/zang09/ORB-SLAM3-STEREO-FIXED) and follow build instruction.
