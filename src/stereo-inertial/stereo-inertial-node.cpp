@@ -143,42 +143,47 @@ void StereoInertialNode::SyncWithImu()
 
         cv::Mat imLeft, imRight;
         double tImLeft = 0, tImRight = 0;
-        if (!imgLeftBuf_.empty() && !imgRightBuf_.empty() && !imuBuf_.empty())
+        ImageMsg::SharedPtr msgLeft, msgRight;
         {
+            // the buffers are filled by the subscription callbacks in another thread,
+            // so they are only read with their mutexes locked
+            std::lock_guard<std::mutex> lockLeft(bufMutexLeft_), lockRight(bufMutexRight_);
+            if (imgLeftBuf_.empty() || imgRightBuf_.empty())
+                continue;
+
             tImLeft = Utility::StampToSec(imgLeftBuf_.front()->header.stamp);
             tImRight = Utility::StampToSec(imgRightBuf_.front()->header.stamp);
 
-            bufMutexRight_.lock();
             while ((tImLeft - tImRight) > maxTimeDiff && imgRightBuf_.size() > 1)
             {
                 imgRightBuf_.pop();
                 tImRight = Utility::StampToSec(imgRightBuf_.front()->header.stamp);
             }
-            bufMutexRight_.unlock();
 
-            bufMutexLeft_.lock();
             while ((tImRight - tImLeft) > maxTimeDiff && imgLeftBuf_.size() > 1)
             {
                 imgLeftBuf_.pop();
                 tImLeft = Utility::StampToSec(imgLeftBuf_.front()->header.stamp);
             }
-            bufMutexLeft_.unlock();
 
             // the matching image from the other camera has not arrived yet
             if ((tImLeft - tImRight) > maxTimeDiff || (tImRight - tImLeft) > maxTimeDiff)
                 continue;
-            if (tImLeft > Utility::StampToSec(imuBuf_.back()->header.stamp))
-                continue;
 
-            bufMutexLeft_.lock();
-            imLeft = GetImage(imgLeftBuf_.front());
+            {
+                std::lock_guard<std::mutex> lockImu(bufMutex_);
+                if (imuBuf_.empty() || tImLeft > Utility::StampToSec(imuBuf_.back()->header.stamp))
+                    continue;
+            }
+
+            msgLeft = imgLeftBuf_.front();
             imgLeftBuf_.pop();
-            bufMutexLeft_.unlock();
-
-            bufMutexRight_.lock();
-            imRight = GetImage(imgRightBuf_.front());
+            msgRight = imgRightBuf_.front();
             imgRightBuf_.pop();
-            bufMutexRight_.unlock();
+        }
+        {
+            imLeft = GetImage(msgLeft);
+            imRight = GetImage(msgRight);
 
             vector<ORB_SLAM3::IMU::Point> vImuMeas;
             bufMutex_.lock();
